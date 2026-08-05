@@ -1,7 +1,8 @@
 # Smart Health Cane (SHC)
 
-**Award:** 3rd Prize, Can Tho City Science & Engineering Fair (KHKT), 2024-2025 school year
-**Role:** Sole developer and main coder for the entire system (sensor integration, priority logic, AI camera integration, IoT alert dispatch). Concept design hand-sketched.
+**Award:** 3rd Prize, Can Tho City Science & Engineering Fair (KHKT), 2024-2025 school year.
+
+**Role:** Sole developer and main coder for the entire system (sensor integration, priority logic, AI camera integration, IoT alert dispatch). Concept design hand-sketched).
 ## Hardware
 | Component | Function |
 |---|---|
@@ -121,10 +122,7 @@ function ALERT():
         alert_fall()
 ```
 
-### 2. Fixing a false-positive assumption
-Initial version treated "cane drops" as equivalent to "user falls" (using accelerometer Z-axis deviation alone as the fall trigger). A feedback question, *"what if only the cane falls, not the person?"*, exposed the flawed assumption.
-
-Current implementation still triggers on Z-axis deviation ≥ 0.3, but a fall alert is deliberately staged **after** the heart-rate check (see `PRIORITY == 1` path above, a 4-second pause between the two alerts) so an abnormal heart rate reading, if present, gets flagged and cross-referenced rather than the fall alert firing in isolation.
+### 2. Fall detection and abnormal heart rate detection
 
 <p align="center">
   <img src="images/block_heart.jpg" width="440"/>
@@ -142,7 +140,7 @@ Current implementation still triggers on Z-axis deviation ≥ 0.3, but a fall al
 function ALERT_HEART_RATE():
     if 100 < heart_rate < 160:
         play_sound(track=2); wait(5s); play_alert_tone(1000ms)
-    elif 0 < heart_rate < 70:
+    elif 0 < heart_rate < 60:
         play_sound(track=3); wait(5s); play_alert_tone(1000ms)
 
 function ALERT_FALL():
