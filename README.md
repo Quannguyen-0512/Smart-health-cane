@@ -1,12 +1,13 @@
 # Smart Health Cane (SHC)
 
-**Award:** 3rd Prize, Can Tho City Science & Engineering Fair (KHKT), 2024-2025 school year.
+**Award:** 3rd Prize, Can Tho City Science & Engineering Fair (KHKT), 2024-2025 school year
+**Role:** Sole developer and main coder for the entire system (sensor integration, priority logic, AI camera integration, IoT alert dispatch). Concept design hand-sketched. Wiring and 3D printing assisted by [tên anh hỗ trợ, nếu muốn credit].
 
-**Role:** Sole developer and main coder for the entire system (sensor integration, priority logic, AI camera integration, IoT alert dispatch). Concept design hand-sketched).
 ## Hardware
+
 | Component | Function |
 |---|---|
-| Yolo:UNO (ATmega328P, Arduino Uno-compatible) | Main controller |
+| Yolo:UNO | Main controller |
 | MAX30102 | Heart rate + blood oxygen sensing |
 | MPU6050 | Fall detection via Z-axis accelerometer deviation |
 | Ultrasonic sensor | Obstacle detection, 3-200 cm range |
@@ -40,6 +41,16 @@ Images were sorted into 3 labeled folders (one per recognition class) and traine
 </p>
 <p align="center"><i>Training data: one labeled folder per class &nbsp;•&nbsp; live classification result on-device</i></p>
 
+## How it was built
+
+Programmed using the **OhStem App**, a block-based (drag-and-drop) visual programming environment for the Yolo:UNO board, conceptually similar to Scratch/Blockly. This project's logic (sensor init, priority ranking, alert dispatch, AI camera response) was designed and assembled block-by-block rather than typed as raw text code.
+
+> Screenshots of the block program are below. This is the actual source, since the block editor doesn't export to a standalone text file.
+
+<p align="center">
+  <img src="images/priority_blocks.jpg" width="760"/>
+</p>
+
 <p align="center">
   <img src="images/block_ai.jpg" width="500"/>
 </p>
@@ -57,18 +68,8 @@ function AI():
         set_LED(D10, GREEN)
         wait(1 second)
     else:
-        set_LED(D10, OFF)
+        set_LED(D10, PURPLE)
 ```
-
-## How it was built
-
-Programmed using the **OhStem App**, a block-based (drag-and-drop) visual programming environment for the Yolo:UNO board, conceptually similar to Scratch/Blockly. This project's logic (sensor init, priority ranking, alert dispatch, AI camera response) was designed and assembled block-by-block rather than typed as raw text code.
-
-> Screenshots of the block program are below. This is the actual source, since the block editor doesn't export to a standalone text file.
-
-<p align="center">
-  <img src="images/priority_blocks.jpg" width="760"/>
-</p>
 
 ## Live monitoring & alerts
 
@@ -87,6 +88,21 @@ Heart rate and fall-detection data stream to the E-Ra IoT dashboard in real time
 
 ## Key design decisions
 
+Every loop cycle runs two independent paths: the AI camera path (signage/road-marking recognition, immediate LED response) and the ALERT path, which first calls CHECK to assign PRIORITY, then dispatches based on it.
+
+```mermaid
+flowchart TD
+    Loop([Main loop, repeats forever]) --> AI[AI function<br/>camera recognition]
+    Loop --> ALERT[ALERT function]
+    AI --> LED[Set LED color]
+
+    ALERT --> CHECK[CHECK function<br/>reads heart rate + Z-axis, sets PRIORITY]
+    CHECK --> P{PRIORITY}
+    P -->|1: heart rate AND fall| B1[ALERT_HEART_RATE<br/>wait 4s<br/>ALERT_FALL]
+    P -->|2: heart rate only| B2[ALERT_HEART_RATE]
+    P -->|3: fall only| B3[ALERT_FALL]
+```
+
 ### 1. Handling simultaneous events: the "priority" variable
 Multiple sensor events (abnormal heart rate, a fall) can trigger at once. Rather than letting alerts overwrite each other, a `PRIORITY` variable ranks which condition fires first: abnormal heart rate **and** a fall together (highest), heart rate alone, then a fall alone.
 
@@ -103,15 +119,8 @@ Multiple sensor events (abnormal heart rate, a fall) can trigger at once. Rather
 *Pseudocode below: a readable translation of the block logic above, not the literal source (the block editor has no text export).*
 
 ```
-function CHECK():
-    if (heart_rate < 60 OR heart_rate > 100) AND abs(Z_baseline - Z_now) >= 0.3:
-        PRIORITY = 1   # both conditions, most critical
-    elif heart_rate < 60 OR heart_rate > 100:
-        PRIORITY = 2   # abnormal heart rate only
-    elif abs(Z_baseline - Z_now) >= 0.3:
-        PRIORITY = 3   # fall only
-
 function ALERT():
+    CHECK()
     if PRIORITY == 1:
         alert_heart_rate()
         wait(4 seconds)
@@ -120,9 +129,20 @@ function ALERT():
         alert_heart_rate()
     elif PRIORITY == 3:
         alert_fall()
+
+function CHECK():
+    if (heart_rate < 60 OR heart_rate > 100) AND abs(Z_baseline - Z_now) >= 0.3:
+        PRIORITY = 1   # both conditions, most critical
+    elif heart_rate < 60 OR heart_rate > 100:
+        PRIORITY = 2   # abnormal heart rate only
+    elif abs(Z_baseline - Z_now) >= 0.3:
+        PRIORITY = 3   # fall only
 ```
 
-### 2. Fall detection and abnormal heart rate detection
+### 2. Fixing a false-positive assumption
+The two functions below detect a fall and an out-of-threshold heart rate. Initial version treated "cane drops" as equivalent to "user falls" (using accelerometer Z-axis deviation alone as the fall trigger). A feedback question, *"what if only the cane falls, not the person?"*, exposed the flawed assumption.
+
+Current implementation still triggers on Z-axis deviation ≥ 0.3, but a fall alert is deliberately staged **after** the heart-rate check (see `PRIORITY == 1` path above, a 4-second pause between the two alerts) so an abnormal heart rate reading, if present, gets flagged and cross-referenced rather than the fall alert firing in isolation.
 
 <p align="center">
   <img src="images/block_heart.jpg" width="440"/>
