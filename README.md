@@ -154,5 +154,3 @@ A judge at the science fair asked what happens if the cane drops but the user do
 
 Other planned improvements: a lighter, more ergonomic casing for daily use, and replacing the current Teachable Machine model with a more robust embedded computer vision model for wider real-world reliability.
 
----
-*Part of a technical portfolio for undergraduate applications (Electrical Engineering / Semiconductors).*
