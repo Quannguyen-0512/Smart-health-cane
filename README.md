@@ -61,15 +61,7 @@ Multiple sensor events (abnormal heart rate, a fall) can trigger at once. Rather
 
 
 
-## AI training
 
-Images were sorted into 3 labeled folders (one per recognition class) and trained using **Google Teachable Machine**, a no-code AI training tool. The resulting model runs on-device on the AI Camera Kit for real-time classification (crosswalk markings vs. pedestrian signage).
-
-<p align="center">
-  <img src="images/ai_dataset.jpg" width="380"/>
-  <img src="images/ai_result.jpg" width="380"/>
-</p>
-<p align="center"><i>Training data: one labeled folder per class &nbsp;•&nbsp; live classification result on-device</i></p>
 
 ## How it was built
 
@@ -80,6 +72,17 @@ Programmed using the **OhStem App**, a block-based (drag-and-drop) visual progra
 <p align="center">
   <img src="images/priority_blocks.jpg" width="760"/>
 </p>
+
+### AI training
+
+Images were sorted into 3 labeled folders (one per recognition class) and trained using **Google Teachable Machine**, a no-code AI training tool. The resulting model runs on-device on the AI Camera Kit for real-time classification (crosswalk markings vs. pedestrian signage).
+
+<p align="center">
+  <img src="images/ai_dataset.jpg" width="380"/>
+  <img src="images/ai_result.jpg" width="380"/>
+</p>
+<p align="center"><i>Training data: one labeled folder per class &nbsp;•&nbsp; live classification result on-device</i></p>
+
 
 ### AI recognition function
 
