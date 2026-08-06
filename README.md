@@ -1,14 +1,20 @@
 # Smart Health Cane (SHC)
 
 **Award:** 3rd Prize, Can Tho City Science & Engineering Fair (KHKT), 2024-2025 school year
-
 **Role:** Sole developer and main coder for the entire system (sensor integration, priority logic, AI camera integration, IoT alert dispatch). Concept design hand-sketched.
+
+<p align="center">
+  <img src="images/shc.jpg" width="220"/>
+  <img src="images/design_handle.jpg" width="220"/>
+</p>
+<p align="center"><i>3D design  &nbsp;&nbsp;</i></p>
+
 
 ## Hardware
 
 | Component | Function |
 |---|---|
-| Yolo:UNO | Main controller |
+| Yolo:UNO (ATmega328P, Arduino Uno-compatible) | Main controller |
 | MAX30102 | Heart rate + blood oxygen sensing |
 | MPU6050 | Fall detection via Z-axis accelerometer deviation |
 | Ultrasonic sensor | Obstacle detection, 3-200 cm range |
@@ -32,6 +38,28 @@ Sensors feed into the Yolo:UNO board as input; the board drives alerts and the I
    AI Camera Kit V2
 ```
 
+## Key design decisions
+
+Every loop cycle runs two independent paths: the AI camera path (signage/road-marking recognition, immediate LED response) and the ALERT path, which first calls CHECK to assign PRIORITY, then dispatches based on it.
+
+```mermaid
+flowchart TD
+    Loop([Main loop, repeats forever]) --> AI[AI function<br/>camera recognition]
+    Loop --> ALERT[ALERT function]
+    AI --> LED[Set LED color]
+
+    ALERT --> CHECK[CHECK function<br/>reads heart rate + Z-axis, sets PRIORITY]
+    CHECK --> P{PRIORITY}
+    P -->|1: heart rate AND fall| B1[ALERT_HEART_RATE<br/>wait 4s<br/>ALERT_FALL]
+    P -->|2: heart rate only| B2[ALERT_HEART_RATE]
+    P -->|3: fall only| B3[ALERT_FALL]
+```
+
+### Handling simultaneous events: the "priority" variable
+Multiple sensor events (abnormal heart rate, a fall) can trigger at once. Rather than letting alerts overwrite each other, a `PRIORITY` variable ranks which condition fires first: abnormal heart rate **and** a fall together (highest), heart rate alone, then a fall alone.
+
+
+
 ## AI training
 
 Images were sorted into 3 labeled folders (one per recognition class) and trained using **Google Teachable Machine**, a no-code AI training tool. The resulting model runs on-device on the AI Camera Kit for real-time classification (crosswalk markings vs. pedestrian signage).
@@ -52,10 +80,12 @@ Programmed using the **OhStem App**, a block-based (drag-and-drop) visual progra
   <img src="images/priority_blocks.jpg" width="760"/>
 </p>
 
+### AI recognition function
+
 <p align="center">
   <img src="images/block_ai.jpg" width="500"/>
 </p>
-<p align="center"><i>AI recognition function: classifies camera input as signage or road markings, sets LED color accordingly</i></p>
+<p align="center"><i>AI: classifies camera input as signage or road markings, sets LED color accordingly</i></p>
 
 *Pseudocode below: a readable translation of the block logic above, not the literal source (the block editor has no text export).*
 
@@ -72,40 +102,7 @@ function AI():
         set_LED(D10, PURPLE)
 ```
 
-## Live monitoring & alerts
-
-Heart rate and fall-detection data stream to the E-Ra IoT dashboard in real time. When a fall or abnormal heart rate is confirmed, a push notification is sent directly to the caregiver's phone.
-
-<p align="center">
-  <img src="images/dashboard.jpg" width="500"/>
-</p>
-<p align="center"><i>E-Ra dashboard: live heart rate and accelerometer (X/Y/Z) readout</i></p>
-
-<p align="center">
-  <img src="images/alert_heart.jpg" width="370"/>
-  <img src="images/alert_fall.jpg" width="370"/>
-</p>
-<p align="center"><i>Real alert: abnormal heart rate &nbsp;•&nbsp; real alert: fall detected</i></p>
-
-## Key design decisions
-
-Every loop cycle runs two independent paths: the AI camera path (signage/road-marking recognition, immediate LED response) and the ALERT path, which first calls CHECK to assign PRIORITY, then dispatches based on it.
-
-```mermaid
-flowchart TD
-    Loop([Main loop, repeats forever]) --> AI[AI function<br/>camera recognition]
-    Loop --> ALERT[ALERT function]
-    AI --> LED[Set LED color]
-
-    ALERT --> CHECK[CHECK function<br/>reads heart rate + Z-axis, sets PRIORITY]
-    CHECK --> P{PRIORITY}
-    P -->|1: heart rate AND fall| B1[ALERT_HEART_RATE<br/>wait 4s<br/>ALERT_FALL]
-    P -->|2: heart rate only| B2[ALERT_HEART_RATE]
-    P -->|3: fall only| B3[ALERT_FALL]
-```
-
-### 1. Handling simultaneous events: the "priority" variable
-Multiple sensor events (abnormal heart rate, a fall) can trigger at once. Rather than letting alerts overwrite each other, a `PRIORITY` variable ranks which condition fires first: abnormal heart rate **and** a fall together (highest), heart rate alone, then a fall alone.
+### Priority assignment and alert dispatch
 
 <p align="center">
   <img src="images/block_check.jpg" width="700"/>
@@ -140,10 +137,7 @@ function CHECK():
         PRIORITY = 3   # fall only
 ```
 
-### 2. Fixing a false-positive assumption
-The two functions below detect a fall and an out-of-threshold heart rate. Initial version treated "cane drops" as equivalent to "user falls" (using accelerometer Z-axis deviation alone as the fall trigger). A feedback question, *"what if only the cane falls, not the person?"*, exposed the flawed assumption.
-
-Current implementation still triggers on Z-axis deviation ≥ 0.3, but a fall alert is deliberately staged **after** the heart-rate check (see `PRIORITY == 1` path above, a 4-second pause between the two alerts) so an abnormal heart rate reading, if present, gets flagged and cross-referenced rather than the fall alert firing in isolation.
+### Heart-rate and fall alert functions
 
 <p align="center">
   <img src="images/block_heart.jpg" width="440"/>
@@ -169,9 +163,28 @@ function ALERT_FALL():
         play_sound(track=1); wait(6s); play_alert_tone(1000ms)
 ```
 
+## Live monitoring & alerts
+
+Heart rate and fall-detection data stream to the E-Ra IoT dashboard in real time. When a fall or abnormal heart rate is confirmed, a push notification is sent directly to the caregiver's phone.
+
+<p align="center">
+  <img src="images/dashboard.jpg" width="500"/>
+</p>
+<p align="center"><i>E-Ra dashboard: live heart rate and accelerometer (X/Y/Z) readout</i></p>
+
+<p align="center">
+  <img src="images/alert_heart.jpg" width="370"/>
+  <img src="images/alert_fall.jpg" width="370"/>
+</p>
+<p align="center"><i>Real alert: abnormal heart rate &nbsp;•&nbsp; real alert: fall detected</i></p>
+
+
+
 ## Future development
 
 A judge at the science fair asked what happens if the cane drops but the user does not, exposing a false-alarm risk in relying on a single fall-detection event. Planned fix: a two-step verification, a physical confirm button on the cane after a potential fall is detected, with an automatic caregiver alert if no confirmation arrives within a set window.
 
 Other planned improvements: a lighter, more ergonomic casing for daily use, and replacing the current Teachable Machine model with a more robust embedded computer vision model for wider real-world reliability.
 
+---
+*Part of a technical portfolio for undergraduate applications (Electrical Engineering / Semiconductors).*
