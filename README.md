@@ -1,6 +1,7 @@
 # Smart Health Cane (SHC)
 
-**Award:** 3rd Prize, Can Tho City Science & Engineering Fair (KHKT), 2024-2025 school year
+**Award:** 3rd Prize, Can Tho City Science & Engineering Fair (KHKT), 2024-2025 school year.
+
 **Role:** Sole developer and main coder for the entire system (sensor integration, priority logic, AI camera integration, IoT alert dispatch). Concept design hand-sketched.
 
 <p align="center">
@@ -186,5 +187,3 @@ A judge at the science fair asked what happens if the cane drops but the user do
 
 Other planned improvements: a lighter, more ergonomic casing for daily use, and replacing the current Teachable Machine model with a more robust embedded computer vision model for wider real-world reliability.
 
----
-*Part of a technical portfolio for undergraduate applications (Electrical Engineering / Semiconductors).*
