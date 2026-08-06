@@ -1,6 +1,7 @@
 # Smart Health Cane (SHC)
 
 **Award:** 3rd Prize, Can Tho City Science & Engineering Fair (KHKT), 2024-2025 school year
+
 **Role:** Sole developer and main coder for the entire system (sensor integration, priority logic, AI camera integration, IoT alert dispatch). Concept design hand-sketched. Wiring and 3D printing assisted by [tên anh hỗ trợ, nếu muốn credit].
 
 ## Hardware
