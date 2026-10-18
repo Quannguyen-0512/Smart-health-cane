@@ -84,7 +84,7 @@ I sorted images into 3 labeled folders (one per recognition class) and trained a
 
 [![AI training data](images/ai_dataset.jpg)](images/ai_dataset.jpg) [![AI classification result](images/ai_result.jpg)](images/ai_result.jpg)
 
-*Training images for one class, and a live classification result from the camera's web page. Here no class reaches the 70% confidence threshold, so the LED would show purple.*
+*Training images for the signage class (the road_markings and exception classes have their own folders), and a live classification result from the camera's web page. Here no class reaches the 70% confidence threshold, so the LED would show purple.*
 
 ### AI recognition function
 
